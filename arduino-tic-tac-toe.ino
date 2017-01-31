@@ -1268,17 +1268,6 @@ void setup()
   // 1K Interrupt.
   Timer1.initialize(1000);         
   Timer1.attachInterrupt(timer_interrupt);   
-
-  //musicPlayer.playTune(shaveMelody, shaveTempo);
-  //musicPlayer.playTune(chargeMelody, chargeTempo);
-  //musicPlayer.playTune(starwarsMelody, starwarsTempo);
-  //musicPlayer.playTune(imperialMelody, imperialTempo);
-  
-
-  
-  //tone(8, 1000, 10000);
-  //delay(1000);
-  //noTone(8);
 }
 
 bool check_player_configuration_changed()
