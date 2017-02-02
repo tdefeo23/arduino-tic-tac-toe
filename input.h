@@ -2,7 +2,7 @@
 typedef enum
 {
     CPU_SKILL_BEGINNER,
-    CPU_SKILL_ADVANCED,
+    CPU_SKILL_INTERMEDIATE,
     CPU_SKILL_EXPERT
 } CpuSkillLevel;
 

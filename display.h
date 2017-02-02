@@ -23,10 +23,13 @@ typedef enum
     CHARACTER_T,
     CHARACTER_U,
     CHARACTER_HYPHEN,
+    CHARACTER_EQUALS,
     NUM_CHARACTERS
 } CharacterType;
 
 #define NUM_DISPLAY_ROWS    4
 #define NUM_DISPLAY_COLUMNS 4
 
-extern void draw_character(Adafruit_LEDBackpack &matrix, /*CharacterType*/uint8_t character, uint8_t row, uint8_t col);
+extern void draw_character(Adafruit_LEDBackpack &matrix, CharacterType character, uint8_t row, uint8_t col);
+
+extern void draw_random(Adafruit_LEDBackpack &matrix, uint8_t row, uint8_t col);

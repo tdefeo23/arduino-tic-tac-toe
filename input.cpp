@@ -138,7 +138,7 @@ CpuSkillLevel read_cpu_skill_level()
     //Serial.print(skill_bit_0); Serial.print(" "); Serial.println(skill_bit_1);
     if ((skill_bit_0 == 1) && (skill_bit_1 == 1))
     {
-        result = CPU_SKILL_ADVANCED;
+        result = CPU_SKILL_INTERMEDIATE;
     }
     else if (skill_bit_0 == 1)
     {

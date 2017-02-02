@@ -29,33 +29,35 @@
 #define T_BITS            0x0059
 #define U_BITS            0x007A
 #define HYPHEN_BITS       0x0001
+#define EQUALS_BITS       0x0041
 
 #define BOTTOM_MASK 0x003F
 #define TOP_MASK    0x0FC0
 
 static uint16_t character_bitmap_table[NUM_CHARACTERS][2] ={
-    {BOTTOM_X_BITS, TOP_X_BITS}, // CHARACTER_X
-    {BOTTOM_O_BITS, TOP_O_BITS}, // CHARACTER_Y
-    {BOTTOM_TIE_BITS, TOP_TIE_BITS}, // CHARACTER_TIE
-    {BOTTOM_BLANK_BITS, TOP_BLANK_BITS}, // CHARACTER_BLANK
-    {ZERO_BITS, ZERO_BITS}, // CHARACTER_0
-    {ONE_BITS, ONE_BITS}, // CHARACTER_1
-    {TWO_BITS, TWO_BITS}, // CHARACTER_2
-    {THREE_BITS, THREE_BITS}, // CHARACTER_3
-    {FOUR_BITS, FOUR_BITS}, // CHARACTER_4
-    {FIVE_BITS, FIVE_BITS}, // CHARACTER_5
-    {SIX_BITS, SIX_BITS}, // CHARACTER_6
-    {SEVEN_BITS, SEVEN_BITS}, // CHARACTER_7
-    {EIGHT_BITS, EIGHT_BITS}, // CHARACTER_8
-    {NINE_BITS, NINE_BITS}, // CHARACTER_9
-    {C_BITS, C_BITS}, // CHARACTER_C
-    {E_BITS, E_BITS}, // CHARACTER_E
-    {I_BITS, I_BITS}, // CHARACTER_I
-    {L_BITS, L_BITS}, // CHARACTER_L
-    {P_BITS, P_BITS}, // CHARACTER_P
-    {T_BITS, T_BITS}, // CHARACTER_T
-    {U_BITS, U_BITS}, // CHARACTER_U
-    {HYPHEN_BITS, HYPHEN_BITS}, // CHARACTER_HYPHEN
+    {BOTTOM_X_BITS, TOP_X_BITS},        // CHARACTER_X
+    {BOTTOM_O_BITS, TOP_O_BITS},        // CHARACTER_Y
+    {BOTTOM_TIE_BITS, TOP_TIE_BITS},    // CHARACTER_TIE
+    {BOTTOM_BLANK_BITS, TOP_BLANK_BITS},// CHARACTER_BLANK
+    {ZERO_BITS, ZERO_BITS},             // CHARACTER_0
+    {ONE_BITS, ONE_BITS},               // CHARACTER_1
+    {TWO_BITS, TWO_BITS},               // CHARACTER_2
+    {THREE_BITS, THREE_BITS},           // CHARACTER_3
+    {FOUR_BITS, FOUR_BITS},             // CHARACTER_4
+    {FIVE_BITS, FIVE_BITS},             // CHARACTER_5
+    {SIX_BITS, SIX_BITS},               // CHARACTER_6
+    {SEVEN_BITS, SEVEN_BITS},           // CHARACTER_7
+    {EIGHT_BITS, EIGHT_BITS},           // CHARACTER_8
+    {NINE_BITS, NINE_BITS},             // CHARACTER_9
+    {C_BITS, C_BITS},                   // CHARACTER_C
+    {E_BITS, E_BITS},                   // CHARACTER_E
+    {I_BITS, I_BITS},                   // CHARACTER_I
+    {L_BITS, L_BITS},                   // CHARACTER_L
+    {P_BITS, P_BITS},                   // CHARACTER_P
+    {T_BITS, T_BITS},                   // CHARACTER_T
+    {U_BITS, U_BITS},                   // CHARACTER_U
+    {HYPHEN_BITS, HYPHEN_BITS},         // CHARACTER_HYPHEN
+    {EQUALS_BITS, EQUALS_BITS},         // CHARACTER_EQUALS
 };
 
 typedef enum
@@ -80,7 +82,7 @@ static uint8_t matrix_row_table[NUM_DISPLAY_ROWS][NUM_DISPLAY_COLUMNS] ={
     {0, 7, 6, 5}
 };
 
-void draw_character(Adafruit_LEDBackpack &matrix, /*CharacterType*/uint8_t character, uint8_t row, uint8_t col)
+void draw_character(Adafruit_LEDBackpack &matrix, CharacterType character, uint8_t row, uint8_t col)
 {
     if ((row < NUM_DISPLAY_ROWS) && (col < NUM_DISPLAY_COLUMNS))
     {
@@ -98,7 +100,30 @@ void draw_character(Adafruit_LEDBackpack &matrix, /*CharacterType*/uint8_t chara
                 character_mask = (position == POSITION_TOP) ? TOP_MASK : BOTTOM_MASK;
             }
             matrix.displaybuffer[matrix_row_table[row][col]] &= ~character_mask;
-            matrix.displaybuffer[matrix_row_table[row][col]] |= character_bits;
+            matrix.displaybuffer[matrix_row_table[row][col]] |= (character_bits & character_mask);
+        }
+    }
+}
+
+void draw_random(Adafruit_LEDBackpack &matrix, uint8_t row, uint8_t col)
+{
+    if ((row < NUM_DISPLAY_ROWS) && (col < NUM_DISPLAY_COLUMNS))
+    {
+        uint8_t position = matrix_position_table[row][col];
+        if (position != POSITION_INVALID)
+        {
+            uint16_t character_bits = random(65536);
+            uint16_t character_mask;
+            if (position == POSITION_BOTH)
+            {
+                character_mask = TOP_MASK | BOTTOM_MASK;
+            }
+            else
+            {
+                character_mask = (position == POSITION_TOP) ? TOP_MASK : BOTTOM_MASK;
+            }
+            matrix.displaybuffer[matrix_row_table[row][col]] &= ~character_mask;
+            matrix.displaybuffer[matrix_row_table[row][col]] |= (character_bits & character_mask);
         }
     }
 }

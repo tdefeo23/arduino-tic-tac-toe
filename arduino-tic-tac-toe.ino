@@ -66,17 +66,6 @@ static CpuSkillLevel cpu_skill_level = CPU_SKILL_BEGINNER;
 
 SimpleMusicPlayer musicPlayer(PIN_AUDIO_OUT);
 
-/*const SimpleMusicPlayer::Note charge_melody[] = 
-{
-  {NOTE_C4, SIXTEENTH_NOTE},
-  {NOTE_E4, SIXTEENTH_NOTE},
-  {NOTE_G4, SIXTEENTH_NOTE},
-  {NOTE_G4, EIGHTH_NOTE},
-  {NOTE_E4, SIXTEENTH_NOTE},
-  {NOTE_G4, QUARTER_NOTE},
-  {NOTE_END}
-};*/
-
 const int chargeMelody[] PROGMEM = {NOTE_C4, NOTE_E4, NOTE_G4, NOTE_G4, NOTE_E4, NOTE_G4, -1};
 const int chargeTempo[] PROGMEM = {SIXTEENTH_NOTE, SIXTEENTH_NOTE, SIXTEENTH_NOTE, EIGHTH_NOTE, SIXTEENTH_NOTE, QUARTER_NOTE};
 
@@ -84,28 +73,10 @@ const int imperialMelody[] PROGMEM = {NOTE_A3, NOTE_A3, NOTE_A3, NOTE_F3, NOTE_C
 const int imperialTempo[] PROGMEM = {QUARTER_NOTE, QUARTER_NOTE, QUARTER_NOTE, EIGHTH_NOTE + SIXTEENTH_NOTE, SIXTEENTH_NOTE, QUARTER_NOTE, EIGHTH_NOTE + SIXTEENTH_NOTE, SIXTEENTH_NOTE, HALF_NOTE};
 
 const int starwarsMelody[] PROGMEM = {NOTE_F4, NOTE_F4, NOTE_F4, NOTE_AS4, NOTE_F5, NOTE_DS5, NOTE_D5, NOTE_C5, NOTE_AS5, NOTE_F5, NOTE_DS5, NOTE_D5, NOTE_C5, NOTE_AS5, NOTE_F5, NOTE_DS5, NOTE_D5, NOTE_DS5, NOTE_C5, -1};
-const int starwarsTempo[] PROGMEM = {
-    SIXTEENTH_NOTE,
-    SIXTEENTH_NOTE,
-    SIXTEENTH_NOTE,
-    QUARTER_NOTE + SIXTEENTH_NOTE,
-    QUARTER_NOTE,
-    SIXTEENTH_NOTE,
-    SIXTEENTH_NOTE,
-    SIXTEENTH_NOTE,
-    QUARTER_NOTE + SIXTEENTH_NOTE,
-    QUARTER_NOTE,
-    SIXTEENTH_NOTE,
-    SIXTEENTH_NOTE,
-    SIXTEENTH_NOTE,
-    QUARTER_NOTE + SIXTEENTH_NOTE,
-    QUARTER_NOTE,
-    SIXTEENTH_NOTE,
-    SIXTEENTH_NOTE,
-    SIXTEENTH_NOTE,
-    QUARTER_NOTE + SIXTEENTH_NOTE,
-};
-
+const int starwarsTempo[] PROGMEM = {SIXTEENTH_NOTE, SIXTEENTH_NOTE, SIXTEENTH_NOTE, (QUARTER_NOTE + SIXTEENTH_NOTE), QUARTER_NOTE, 
+                                     SIXTEENTH_NOTE, SIXTEENTH_NOTE, SIXTEENTH_NOTE, (QUARTER_NOTE + SIXTEENTH_NOTE), QUARTER_NOTE,
+                                     SIXTEENTH_NOTE, SIXTEENTH_NOTE, SIXTEENTH_NOTE, (QUARTER_NOTE + SIXTEENTH_NOTE), QUARTER_NOTE, 
+                                     SIXTEENTH_NOTE, SIXTEENTH_NOTE, SIXTEENTH_NOTE, (QUARTER_NOTE + SIXTEENTH_NOTE)};
 
 const int shaveMelody[] PROGMEM = {NOTE_C4, NOTE_G3, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4, -1};
 const int shaveTempo[] PROGMEM = {QUARTER_NOTE, SIXTEENTH_NOTE, SIXTEENTH_NOTE, SIXTEENTH_NOTE, QUARTER_NOTE, QUARTER_NOTE, QUARTER_NOTE, QUARTER_NOTE, QUARTER_NOTE};
@@ -180,7 +151,7 @@ void draw_blanks()
 void draw_score(uint8_t score)
 {
     static CharacterType digit_character[10] = {CHARACTER_0, CHARACTER_1, CHARACTER_2, CHARACTER_3, CHARACTER_4, CHARACTER_5, CHARACTER_6, CHARACTER_7, CHARACTER_8, CHARACTER_9};
-    draw_character(matrix, CHARACTER_HYPHEN, 3, 1);
+    draw_character(matrix, CHARACTER_EQUALS, 3, 1);
     uint8_t tens = score / 10;
     uint8_t ones = score % 10;
 
@@ -263,6 +234,30 @@ uint8_t check_win()
     return result;
 }
 
+int find_winning_move(uint8_t player)
+{
+    int result = -1;
+    
+    for (uint8_t index = 0; index < 9; ++index)
+    {
+        if (tic_tac_toe_game_grid[index] == CHARACTER_BLANK)
+        {
+            tic_tac_toe_game_grid[index] = (CharacterType) player;
+            if (check_win() != CHARACTER_BLANK)
+            {
+               result = index; 
+            }
+            tic_tac_toe_game_grid[index] = CHARACTER_BLANK;
+        }
+        if (result != -1)
+        {
+            break;
+        }
+    }
+    
+    return result;
+}
+
 int minimax(uint8_t player, int *best_move, uint8_t *move_depth, uint8_t *end_move_depth)
 {
     int move = -1;
@@ -308,24 +303,13 @@ int minimax(uint8_t player, int *best_move, uint8_t *move_depth, uint8_t *end_mo
             {
                 max = local_end_move_depth;
                 min = local_end_move_depth;
-                //min_decisions = local_decision_count;
-                //max_decisions = local_decision_count;
-                //if (decision_count != NULL)
-                //{
-                //  *decision_count = *decision_count + local_decision_count;
-                //}
+                
                 score = thisScore;
                 move = index;
                 selected_end_move_depth = local_end_move_depth;
             }
         }
     }
-
-    //if (best_move != NULL)
-    //{
-    //  Serial.println();
-    //  Serial.print("Chose: "); Serial.println(move);
-    //}
 
     if (move == -1)
     {
@@ -340,7 +324,12 @@ int minimax(uint8_t player, int *best_move, uint8_t *move_depth, uint8_t *end_mo
         if (score == -1)
         {
             // If we are going to loose, at least make a blocking move if possible to prolong the game as much as possible.
-            // TPD - FIND BLOCK HERE.     
+            move = find_winning_move((player == CHARACTER_X) ? CHARACTER_O : CHARACTER_X);
+            if (move != -1)
+            {
+                Serial.println("Making blocking move in a loosing cause!");
+                *best_move = move;
+            }
         }
         Serial.print("Best move: ");
         Serial.print(move);
@@ -358,28 +347,116 @@ int compute_best_move(uint8_t player, int move_count)
 {
     static uint8_t corners_table[4] = {0, 2, 6, 8};
     int move = -1;
+    
+    if (move_count == 0)
+    {
+        // Opening move, just pick randomly.
+        move = random(9);
+    }
+    else if (cpu_skill_level == CPU_SKILL_BEGINNER)
+    {
+        // Really dumb CPU, just choose randomly!
+        
+        // See if there is a winning move for us right now, and if so, take it!
+        // Even the dumb CPU will take a win if available.
+        move = find_winning_move(player);
+        if (move == -1)
+        {  
+            // Choose randomly.
+            move = random(9);
+            while (tic_tac_toe_game_grid[move] != CHARACTER_BLANK)
+            {
+                move = (move + 1) % 9;
+            }
+        }
+    }
+    else if (cpu_skill_level == CPU_SKILL_INTERMEDIATE)
+    {
+        // Intermediate CPU.
+        // See if there is a winning move for us right now, and if so, take it!
+        move = find_winning_move(player);
+        if (move == -1)
+        {
+            // No winning move for us. So now see if we are about to loose,
+            // and if so make the block.
+            move = find_winning_move((player == CHARACTER_X) ? CHARACTER_O : CHARACTER_X);
+        }
+
+        if (move == -1)
+        {
+            // No immediate blocking or winning move, so be dumb and choose randomly.
+            move = random(9);
+            while (tic_tac_toe_game_grid[move] != CHARACTER_BLANK)
+            {
+                move = (move + 1) % 9;
+            }
+        }
+    }
+    else
+    {
+        // CPU_SKILL_EXPERT: Smart CPU.
+        if (move_count == 1)
+        {
+            // Second move. If opening move was center, take one of the 4 corners,
+            // otherwise, take the center. Minimax will work here too, but this 
+            // is faster since it takes minimax a long time when there are
+            // few moves made.
+            if (tic_tac_toe_game_grid[4] != CHARACTER_BLANK)
+            {
+                // Opponent chose center, so choose one of the four corners;
+                move = corners_table[random(4)];
+            }
+            else
+            {
+                // Opponent did not choose center, so take it.
+                move = 4;
+            }
+        }
+        else
+        {
+            // All other moves, use minimax algorithm to determine best move.
+            uint8_t depth = 0, max_depth = 0;
+            minimax(player, &move, &depth, &max_depth);
+        }
+    }
+        
+    
+#if 0    
+    static uint8_t corners_table[4] = {0, 2, 6, 8};
+    int move = -1;
 
     //Serial.print("computer move :");
     //Serial.println((player == CHARACTER_X) ? "X" : "O");
     if (move_count == 0)
     {
+        // Opening move, just pick randomly.
         move = random(9);
     }
     else if ((move_count == 1) || (cpu_skill_level == CPU_SKILL_BEGINNER))
     {
-        int dumb_move = 0; //random(2);
-        if ((cpu_skill_level == CPU_SKILL_BEGINNER) || ((cpu_skill_level == CPU_SKILL_ADVANCED) && (dumb_move == 0)))
+        if ((cpu_skill_level == CPU_SKILL_BEGINNER) || (cpu_skill_level == CPU_SKILL_ADVANCED))
         {
-            if ((cpu_skill_level == CPU_SKILL_ADVANCED) && (dumb_move == 0))
+            // Dumb CPU.            
+            
+            // See if there is a winning move for us.
+            // Even the dumb CPU will take the winning move if it exists.
+            move = find_winning_move(player);
+            if (move == -1)
             {
-                Serial.println("CPU_SKILL_ADVANCED, DUMB MOVE.");
+                // No winning move for us. So now see if we are about to loose,
+                // and if so make the block. Even the dumb CPU will make a blocking move
+                // when it can.
+                move = find_winning_move((player == CHARACTER_X) ? CHARACTER_O : CHARACTER_X);
             }
 
-            // Dumb CPU.
-            move = random(9);
-            while (tic_tac_toe_game_grid[move] != CHARACTER_BLANK)
+            if (move == -1)
             {
-                move = (move + 1) % 9;
+                // No immediate blocking or winning move, so be dumb and choose randomly.
+                move = random(9);
+                while (tic_tac_toe_game_grid[move] != CHARACTER_BLANK)
+                {
+                    move = (move + 1) % 9;
+                }
             }
         }
         else
@@ -414,12 +491,11 @@ int compute_best_move(uint8_t player, int move_count)
         }
         else
         {
-            uint8_t decision_count = 0;
             uint8_t depth = 0, max_depth = 0;
             minimax(player, &move, &depth, &max_depth);
         }
     }
-
+#endif
     return move;
 }
 
@@ -662,7 +738,7 @@ void cpu_move(uint8_t player, int move_count)
     cursor_column = 0;
 
     uint16_t current_move_delay = 0;
-    uint16_t max_move_delay = 1000 + random(1000);
+    uint16_t max_move_delay = (number_of_players == 0) ? (500 + random(500)) : (1000 + random(500));
 
     while (done == false)
     {
@@ -678,7 +754,7 @@ void cpu_move(uint8_t player, int move_count)
             vertical = !vertical;
 
             current_move_delay = 0;
-            max_move_delay = 250 + random(750);
+            max_move_delay = 150 + random(150); //250 + random(750);
         }
 
         if ((joyval & JOYSTICK_BUTTON) != 0)
@@ -1017,11 +1093,11 @@ void show_scores()
 
 void show_player_configuration()
 {
-
     typedef enum
     {
         BLANK_START, X_PLAYER, BLANK_X_O, O_PLAYER, BLANK_O_X_PLAYER
     } ScoreDisplayState;
+    
     ScoreDisplayState score_display_state = BLANK_START;
     uint16_t elapsed = 500;
     uint16_t display_delay = 750;
@@ -1237,36 +1313,6 @@ void show_winner(CharacterType winning_character)
     delay(250);
 }
 
-
-static unsigned int int_count = 0;
-
-void timer_interrupt()
-{
-    musicPlayer.updateMusic(1);
-    int_count++;
-}
-
-void setup()
-{
-    Serial.begin(9600);
-    Serial.println("Tic Tac Toe");
-
-    matrix.begin(0x70); // pass in the address
-
-    pinMode(PIN_JOYSTICK_X, INPUT);
-    pinMode(PIN_JOYSTICK_Y, INPUT);
-    pinMode(PIN_JOYSTICK_BUTTON, INPUT_PULLUP);
-    pinMode(PIN_CPU_SKILL_BIT_0, INPUT_PULLUP);
-    pinMode(PIN_CPU_SKILL_BIT_1, INPUT_PULLUP);
-    pinMode(PIN_X_CPU_OR_HUMAN, INPUT_PULLUP);
-    pinMode(PIN_O_CPU_OR_HUMAN, INPUT_PULLUP);
-    pinMode(PIN_AUDIO_OUT, OUTPUT);
-
-    // 1K Interrupt.
-    Timer1.initialize(1000);
-    Timer1.attachInterrupt(timer_interrupt);
-}
-
 bool check_player_configuration_changed()
 {
     bool result = false;
@@ -1308,10 +1354,39 @@ bool check_player_configuration_changed()
     return result;
 }
 
+static unsigned int int_count = 0;
+
+void timer_interrupt()
+{
+    musicPlayer.updateMusic(1);
+    int_count++;
+}
+
+void setup()
+{
+    Serial.begin(9600);
+    Serial.println("Tic Tac Toe");
+
+    matrix.begin(0x70); // pass in the address
+
+    pinMode(PIN_JOYSTICK_X, INPUT);
+    pinMode(PIN_JOYSTICK_Y, INPUT);
+    pinMode(PIN_JOYSTICK_BUTTON, INPUT_PULLUP);
+    pinMode(PIN_CPU_SKILL_BIT_0, INPUT_PULLUP);
+    pinMode(PIN_CPU_SKILL_BIT_1, INPUT_PULLUP);
+    pinMode(PIN_X_CPU_OR_HUMAN, INPUT_PULLUP);
+    pinMode(PIN_O_CPU_OR_HUMAN, INPUT_PULLUP);
+    pinMode(PIN_AUDIO_OUT, OUTPUT);
+
+    // 1K Interrupt.
+    Timer1.initialize(1000);
+    Timer1.attachInterrupt(timer_interrupt);
+}
+
 void loop()
 {
     CharacterType winning_character;
-
+    
     if (last_game_state != game_state)
     {
         Serial.print("New game state: ");
