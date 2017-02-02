@@ -82,6 +82,8 @@ static uint8_t matrix_row_table[NUM_DISPLAY_ROWS][NUM_DISPLAY_COLUMNS] ={
     {0, 7, 6, 5}
 };
 
+CharacterType digit_character[10] = {CHARACTER_0, CHARACTER_1, CHARACTER_2, CHARACTER_3, CHARACTER_4, CHARACTER_5, CHARACTER_6, CHARACTER_7, CHARACTER_8, CHARACTER_9};
+
 void draw_character(Adafruit_LEDBackpack &matrix, CharacterType character, uint8_t row, uint8_t col)
 {
     if ((row < NUM_DISPLAY_ROWS) && (col < NUM_DISPLAY_COLUMNS))

@@ -25,6 +25,7 @@ typedef enum
 typedef enum
 {
     INVALID,
+    SELF_TEST,
     NEW_PLAYER_CONFIGURATION,
     NEW_GAME,
     CPU_X_TURN,
@@ -37,6 +38,7 @@ typedef enum
 
 static const char *game_state_names[] = {
     "INVALID",
+    "SELF_TEST",
     "NEW_PLAYER_CONFIGURATION",
     "NEW_GAME",
     "CPU_X_TURN",
@@ -149,14 +151,48 @@ void draw_blanks()
 }
 
 void draw_score(uint8_t score)
-{
-    static CharacterType digit_character[10] = {CHARACTER_0, CHARACTER_1, CHARACTER_2, CHARACTER_3, CHARACTER_4, CHARACTER_5, CHARACTER_6, CHARACTER_7, CHARACTER_8, CHARACTER_9};
+{    
     draw_character(matrix, CHARACTER_EQUALS, 3, 1);
     uint8_t tens = score / 10;
     uint8_t ones = score % 10;
 
     draw_character(matrix, /*(tens == 0) ? CHARACTER_BLANK :*/ digit_character[tens], 3, 2);
     draw_character(matrix, digit_character[ones], 3, 3);
+}
+
+void self_test()
+{
+    int digit = 0;
+    
+    while (true)
+    {
+        for (uint8_t row = 0; row < 3; row++)
+        {
+            for (uint8_t col = 0; col < 3; col++)
+            {
+                draw_character(matrix, ((digit % 2) == 0) ? CHARACTER_X : CHARACTER_O, row, col);
+            }            
+        }
+        
+        draw_character(matrix, ((digit % 2) == 0) ? CHARACTER_X : CHARACTER_O, 3, 0);        
+        draw_character(matrix, digit_character[digit], 3, 1);
+        draw_character(matrix, digit_character[digit], 3, 2);
+        draw_character(matrix, digit_character[digit], 3, 3);
+        
+        matrix.writeDisplay();
+        
+        digit++;
+        digit %=10;
+        
+        for (int index = 0; index < 1000; index++)
+        {
+            if ((read_joystick_debounced() != 0) || (check_player_configuration_changed() == true))
+            {
+                musicPlayer.playTune(cursor_move_note, cursor_move_tempo);
+            }
+            delay(1);            
+        }
+    }
 }
 
 void print_tic_tac_toe_game_grid()
@@ -1329,7 +1365,7 @@ bool check_player_configuration_changed()
     if (cpu_is_x != new_cpu_is_x)
     {
         cpu_is_x = new_cpu_is_x;
-        if (number_of_players == 1)
+        if ((number_of_players == 1) || (game_state == SELF_TEST))
         {
             result = true;
         }
@@ -1338,7 +1374,7 @@ bool check_player_configuration_changed()
     if (cpu_skill_level != new_cpu_skill_level)
     {
         cpu_skill_level = new_cpu_skill_level;
-        if (number_of_players < 2)
+        if ((number_of_players < 2) || (game_state == SELF_TEST))
         {
             result = true;
         }
@@ -1381,6 +1417,11 @@ void setup()
     // 1K Interrupt.
     Timer1.initialize(1000);
     Timer1.attachInterrupt(timer_interrupt);
+    
+    if ((read_joystick() & JOYSTICK_BUTTON) == JOYSTICK_BUTTON)
+    {
+        game_state = SELF_TEST;
+    }
 }
 
 void loop()
@@ -1395,6 +1436,10 @@ void loop()
     }
     switch (game_state)
     {
+    case SELF_TEST:
+        self_test();
+        break;
+        
     case NEW_PLAYER_CONFIGURATION:
         total_x_wins = 0;
         total_o_wins = 0;

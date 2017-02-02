@@ -30,6 +30,8 @@ typedef enum
 #define NUM_DISPLAY_ROWS    4
 #define NUM_DISPLAY_COLUMNS 4
 
+extern CharacterType digit_character[10];
+
 extern void draw_character(Adafruit_LEDBackpack &matrix, CharacterType character, uint8_t row, uint8_t col);
 
 extern void draw_random(Adafruit_LEDBackpack &matrix, uint8_t row, uint8_t col);
