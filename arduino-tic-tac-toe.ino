@@ -12,7 +12,7 @@
 #include "SimpleMusicPlayer.h"
 #include "pin_assignments.h"
 
-Adafruit_LEDBackpack matrix = Adafruit_LEDBackpack();
+static Adafruit_LEDBackpack matrix = Adafruit_LEDBackpack();
 
 typedef enum
 {
@@ -455,83 +455,7 @@ int compute_best_move(uint8_t player, int move_count)
             minimax(player, &move, &depth, &max_depth);
         }
     }
-        
-    
-#if 0    
-    static uint8_t corners_table[4] = {0, 2, 6, 8};
-    int move = -1;
-
-    //Serial.print("computer move :");
-    //Serial.println((player == CHARACTER_X) ? "X" : "O");
-    if (move_count == 0)
-    {
-        // Opening move, just pick randomly.
-        move = random(9);
-    }
-    else if ((move_count == 1) || (cpu_skill_level == CPU_SKILL_BEGINNER))
-    {
-        if ((cpu_skill_level == CPU_SKILL_BEGINNER) || (cpu_skill_level == CPU_SKILL_ADVANCED))
-        {
-            // Dumb CPU.            
             
-            // See if there is a winning move for us.
-            // Even the dumb CPU will take the winning move if it exists.
-            move = find_winning_move(player);
-            if (move == -1)
-            {
-                // No winning move for us. So now see if we are about to loose,
-                // and if so make the block. Even the dumb CPU will make a blocking move
-                // when it can.
-                move = find_winning_move((player == CHARACTER_X) ? CHARACTER_O : CHARACTER_X);
-            }
-
-            if (move == -1)
-            {
-                // No immediate blocking or winning move, so be dumb and choose randomly.
-                move = random(9);
-                while (tic_tac_toe_game_grid[move] != CHARACTER_BLANK)
-                {
-                    move = (move + 1) % 9;
-                }
-            }
-        }
-        else
-        {
-            // Smart CPU.
-            // Find opponent's opening move.
-            if (tic_tac_toe_game_grid[4] != CHARACTER_BLANK)
-            {
-                // Opponent chose center, so choose one of the four corners;
-                move = corners_table[random(4)];
-            }
-            else
-            {
-                // Opponent did not choose center, so take it.
-                move = 4;
-            }
-        }
-    }
-    else
-    {
-        int dumb_move = 0; //random(2);
-        if ((move_count == 2) && (cpu_skill_level == CPU_SKILL_ADVANCED) && (dumb_move == 0))
-        {
-            Serial.println("CPU_SKILL_ADVANCED, DUMB MOVE.");
-
-            // Dumb CPU.
-            move = random(9);
-            while (tic_tac_toe_game_grid[move] != CHARACTER_BLANK)
-            {
-                move = (move + 1) % 9;
-            }
-        }
-        else
-        {
-            uint8_t depth = 0, max_depth = 0;
-            minimax(player, &move, &depth, &max_depth);
-        }
-    }
-#endif
     return move;
 }
 

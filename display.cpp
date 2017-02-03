@@ -9,8 +9,8 @@
 #define BOTTOM_O_BITS     0x003C
 #define TOP_TIE_BITS      0x0800
 #define BOTTOM_TIE_BITS   0x0001
-#define BOTTOM_BLANK_BITS 0x0000
 #define TOP_BLANK_BITS    0x0000
+#define BOTTOM_BLANK_BITS 0x0000
 #define ZERO_BITS         0x007E
 #define ONE_BITS          0x0022
 #define TWO_BITS          0x0057
